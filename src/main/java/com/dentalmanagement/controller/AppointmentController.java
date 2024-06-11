@@ -63,23 +63,23 @@ public class AppointmentController {
 			return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 		}
 		LocalDate today = LocalDate.now();
-		LocalTime now = LocalTime.now();
-		List<TimeSchedule> todaySchedules = timeScheduleService.getScheduleTimesByDate(today.toString());
+		LocalDate appointmentDate = LocalDate.parse(appointment.getAppointmentDate());
+		if (appointmentDate.isEqual(today)) {
+			LocalTime now = LocalTime.now();
+			List<TimeSchedule> todaySchedules = timeScheduleService.getScheduleTimesByDate(today.toString());
 
+			boolean isWithinTimeSlot = todaySchedules.stream().anyMatch(schedule ->
+					LocalTime.parse(schedule.getEndTime()).isAfter(now)
+			);
 
-		// Kiểm tra xem thời gian hiện tại có nằm trong giờ hoạt động hay không
-		boolean isWithinTimeSlot = todaySchedules.stream().anyMatch(schedule ->
-				LocalTime.parse(schedule.getEndTime()).isAfter(now)
-		);
-
-		// Nếu thời gian hiện tại đã quá giờ làm việc
-		if (!isWithinTimeSlot) {
-			response.setResponseCode(ResponseCode.FAILED.value());
-			response.setResponseMessage("Failed to add patient appointment - Current time is beyond today's operational hours");
-			return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+			if (!isWithinTimeSlot) {
+				response.setResponseCode(ResponseCode.FAILED.value());
+				response.setResponseMessage("Failed to add patient appointment - Current time is beyond today's operational hours");
+				return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+			}
 		}
 
-		LocalDate appointmentDate = LocalDate.parse(appointment.getAppointmentDate());
+		//LocalDate appointmentDate = LocalDate.parse(appointment.getAppointmentDate());
 		List<TimeSchedule> appointmentDaySchedules = timeScheduleService.getScheduleTimesByDate(appointmentDate.toString());
 
 		// Kiểm tra nếu lịch khám của ngày đặt hẹn là null hoặc rỗng
